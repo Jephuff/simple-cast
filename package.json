@@ -1,0 +1,37 @@
+{
+  "name": "simple-cast",
+  "version": "0.0.1",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/Jephuff/simple-cast.git"
+  },
+  "keywords": [
+    "chromecast",
+    "chrome",
+    "cast",
+    "video",
+    "media"
+  ],
+  "author": "Jeffrey Burt",
+  "license": "ISC",
+  "dependencies": {
+    "eventemitter3": "^2.0.3",
+    "load-script": "^1.0.0",
+    "lodash.get": "^4.4.2"
+  },
+  "devDependencies": {
+    "eslint": "^4.5.0",
+    "eslint-config-airbnb": "^15.1.0",
+    "eslint-config-prettier": "^2.3.0",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-jsx-a11y": "^5.1.1",
+    "eslint-plugin-prettier": "^2.2.0",
+    "eslint-plugin-react": "^7.3.0",
+    "prettier": "^1.5.3"
+  }
+}
