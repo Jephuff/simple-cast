@@ -3,9 +3,16 @@ const emitter = require('./emitter');
 
 let intervalTimer = null;
 
+let lastProgress;
 function onProgress() {
   if (state.media) {
-    emitter.emit('PROGRESS', state.media.getEstimatedTime());
+    const currentTime = state.media.getEstimatedTime();
+    if (lastProgress !== currentTime) {
+      lastProgress = currentTime;
+      emitter.emit('PROGRESS', state.media.getEstimatedTime());
+    }
+  } else {
+    lastProgress = null;
   }
 }
 

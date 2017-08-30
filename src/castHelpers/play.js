@@ -15,7 +15,7 @@ module.exports = (file, time) => {
     playFrom = time || Math.max(state.media.getEstimatedTime() - 10, 0);
   }
 
-  return connect()
+  connect()
     .then(() => {
       if (playFile && currentFile !== playFile) {
         return loadMedia(playFile, setMedia);

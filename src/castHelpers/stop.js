@@ -1,10 +1,13 @@
 const state = require('../state');
 
-module.exports = () =>
-  new Promise((resolve, reject) => {
-    if (state.media) {
-      state.media.stop(null, resolve, reject);
-    } else {
-      reject('not currently playing');
-    }
-  });
+module.exports = () => {
+  if (state.media) {
+    state.media.stop(
+      null,
+      () => console.log('stopped'),
+      () => console.warn('failed to stop')
+    );
+  } else {
+    console.warn('not currently playing');
+  }
+};
