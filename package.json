@@ -1,6 +1,6 @@
 {
   "name": "simple-cast",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -8,13 +8,22 @@
     "prepublish": "mkdir -p dist && babel src --out-dir=dist"
   },
   "babel": {
-    "presets": ["stage-0", "latest"]
+    "presets": [
+      "stage-0",
+      "latest"
+    ]
   },
   "repository": {
     "type": "git",
     "url": "git+ssh://git@bitbucket.org/Jephuff/simple-cast.git"
   },
-  "keywords": ["chromecast", "chrome", "cast", "video", "media"],
+  "keywords": [
+    "chromecast",
+    "chrome",
+    "cast",
+    "video",
+    "media"
+  ],
   "author": "Jeffrey Burt",
   "license": "ISC",
   "dependencies": {
