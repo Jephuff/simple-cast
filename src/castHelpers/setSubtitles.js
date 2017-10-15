@@ -1,4 +1,5 @@
 const state = require('../state');
+const emitter = require('../emitter');
 
 module.exports = active => {
   if (state.media) {
@@ -7,10 +8,13 @@ module.exports = active => {
     );
     state.media.editTracksInfo(
       tracksInfoRequest,
-      () => console.log('subtitles set'),
-      () => console.warn('failed to set subtitles')
+      () => emitter.emit('SUBTITLES_ON'),
+      () => emitter.emit('SUBTITLES_OFF')
     );
   } else {
     console.warn('not currently playing');
   }
 };
+
+//
+//
