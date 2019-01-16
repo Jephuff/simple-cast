@@ -27,7 +27,6 @@
   "author": "Jeffrey Burt",
   "license": "ISC",
   "dependencies": {
-    "ansi-styles": "^3.2.0",
     "eventemitter3": "^2.0.3",
     "load-script": "^1.0.0",
     "lodash.get": "^4.4.2"
