@@ -4,9 +4,9 @@
   "description": "",
   "main": "dist",
   "scripts": {
-    "prepare": "rm -r dist && mkdir -p dist && npm run build",
-    "watch": "rm -r dist && mkdir -p dist && npm run build -- -w",
-    "build": "tsc --outDir dist --declarationDir dist -d"
+    "prepare": "mkdir -p dist && rm -r dist && mkdir -p dist && npm run build",
+    "watch": "mkdir -p dist && rm -r dist && mkdir -p dist && npm run build -- -w",
+    "build": "tsc --outDir dist -d"
   },
   "repository": {
     "type": "git",
@@ -23,13 +23,13 @@
   "author": "Jeffrey Burt",
   "license": "ISC",
   "dependencies": {
-    "eventemitter3": "^2.0.3",
+    "eventemitter3": "^3.1.0",
     "load-script": "^1.0.0"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^1.2.0",
     "eslint": "^5.12.1",
-    "eslint-config-prettier": "^3.5.0",
+    "eslint-config-prettier": "^4.1.0",
     "eslint-plugin-prettier": "^3.0.1",
     "prettier": "^1.15.3",
     "typescript": "^3.2.4"

@@ -6,8 +6,8 @@ let initPromise: Promise<{
   playerController: ChromeCast.RemotePlayerController;
   cast: ChromeCast.Cast;
   chrome: ChromeCast.Chrome;
-}>;
-const init = async () => {
+}> | null = null;
+const init = async (applicationId?: string) => {
   initPromise =
     initPromise ||
     (async () => {
@@ -17,6 +17,7 @@ const init = async () => {
       }
       window.cast.framework.CastContext.getInstance().setOptions({
         receiverApplicationId:
+          applicationId ||
           window.chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
       });
 
@@ -36,6 +37,11 @@ const init = async () => {
           value?: number | string | { contentId: string };
         }): void => {
           switch (field) {
+            case "isConnected":
+              emitter.emit(
+                value ? CastEvent.Connected : CastEvent.Disconnected
+              );
+              break;
             case "currentTime":
               if (typeof value === "number") {
                 emitter.emit(CastEvent.Progress, value);
@@ -72,7 +78,7 @@ const init = async () => {
                     emitter.emit(CastEvent.SubtitlesOff);
                   }
                 }
-              } else {
+              } else if (typeof value !== "string") {
                 emitter.emit(CastEvent.CurrentFile, "");
                 if (
                   media &&
@@ -99,8 +105,14 @@ const init = async () => {
   return initPromise;
 };
 
+const getInitPromise = () => {
+  if (!initPromise) {
+    throw new Error("must call `simpleCast.init()` before using any methods");
+  }
+  return init();
+};
 const isPlaying = async () => {
-  const { chrome, cast } = await init();
+  const { chrome, cast } = await getInitPromise();
   const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
   const mediaSession = castSession && castSession.getMediaSession();
   const playerState = mediaSession && mediaSession.playerState;
@@ -111,34 +123,55 @@ const hasContentId = (obj: any): obj is { contentId: string } => {
   return obj && obj.contentId;
 };
 
+const connect = async () => {
+  const { cast } = await getInitPromise();
+
+  const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
+  if (castSession) {
+    return castSession;
+  } else {
+    await cast.framework.CastContext.getInstance().requestSession();
+    return cast.framework.CastContext.getInstance().getCurrentSession();
+  }
+};
+
 export default {
   CastEvent,
   on: emitter.on.bind(emitter) as Listener,
   off: emitter.off.bind(emitter) as Listener,
-  init: async () => {
-    await init();
+  init: async (applicationId?: string) => {
+    await init(applicationId);
   },
-
   currentDuration: async () => {
-    const { player } = await init();
+    const { player } = await getInitPromise();
     return player.duration;
   },
+  isConnected: async () => {
+    const { cast } = await getInitPromise();
+    return (
+      cast.framework.CastContext.getInstance().getCastState() ===
+      cast.framework.CastState.CONNECTED
+    );
+  },
+
   currentFile: async () => {
-    const { cast } = await init();
+    const { cast } = await getInitPromise();
     const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
     const mediaSession = castSession && castSession.getMediaSession();
     return (mediaSession && mediaSession.media.contentId) || "";
   },
   subtitleStatus: async () => {
-    const { cast } = await init();
+    const { cast } = await getInitPromise();
     const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
     const mediaSession = castSession && castSession.getMediaSession();
     return Boolean(mediaSession && mediaSession.activeTrackIds.length);
   },
   isPlaying,
-
+  connect: async () => {
+    await connect();
+  },
   send: async (file: string, time?: number, subtitleFile?: string) => {
-    const { chrome, cast } = await init();
+    const { chrome } = await getInitPromise();
     const mediaInfo = new chrome.cast.media.MediaInfo(
       time ? `${file}#t=${time}` : file,
       "video/mp4"
@@ -163,38 +196,33 @@ export default {
       loadRequest.activeTrackIds = [];
     }
 
-    let castSession = cast.framework.CastContext.getInstance().getCurrentSession();
-    if (!castSession) {
-      await cast.framework.CastContext.getInstance().requestSession();
-      castSession = cast.framework.CastContext.getInstance().getCurrentSession();
-    }
-
+    const castSession = await connect();
     if (!castSession) return;
     loadRequest && (await castSession.loadMedia(loadRequest));
   },
   play: async () => {
-    const { playerController } = await init();
+    const { playerController } = await getInitPromise();
     if (!(await isPlaying())) {
       playerController.playOrPause();
     }
   },
   pause: async () => {
-    const { playerController } = await init();
+    const { playerController } = await getInitPromise();
     if (await isPlaying()) {
       playerController.playOrPause();
     }
   },
   stop: async () => {
-    const { playerController } = await init();
+    const { playerController } = await getInitPromise();
     playerController.stop();
   },
   seek: async (time: number) => {
-    const { playerController, player } = await init();
+    const { playerController, player } = await getInitPromise();
     player.currentTime = Math.floor(time);
     playerController.seek();
   },
   setSubtitleActive: async (active: boolean) => {
-    const { chrome, cast } = await init();
+    const { chrome, cast } = await getInitPromise();
     const tracksInfoRequest = new chrome.cast.media.EditTracksInfoRequest(
       active ? [1] : []
     );

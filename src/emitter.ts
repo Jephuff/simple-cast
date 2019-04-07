@@ -9,6 +9,8 @@ export enum CastEvent {
   Paused = "PAUSED",
   SubtitlesOn = "SUBTITLES_ON",
   SubtitlesOff = "SUBTITLES_OFF",
+  Connected = "CONNECTED",
+  Disconnected = "DISCONNECTED",
 }
 
 export interface Listener {
@@ -25,7 +27,9 @@ export interface Listener {
       | CastEvent.Playing
       | CastEvent.Paused
       | CastEvent.SubtitlesOff
-      | CastEvent.SubtitlesOn,
+      | CastEvent.SubtitlesOn
+      | CastEvent.Connected
+      | CastEvent.Disconnected,
     callback: () => void
   ): void;
 }
@@ -42,6 +46,8 @@ const emitter: {
         | CastEvent.Paused
         | CastEvent.SubtitlesOff
         | CastEvent.SubtitlesOn
+        | CastEvent.Connected
+        | CastEvent.Disconnected
     ): void;
   };
 } = new EventEmitter();
