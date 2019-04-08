@@ -50,6 +50,6 @@ const emitter: {
         | CastEvent.Disconnected
     ): void;
   };
-} = new EventEmitter();
+} = new EventEmitter.EventEmitter();
 
 export default emitter;
