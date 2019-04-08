@@ -1,4 +1,4 @@
-import emitter, { Listener, CastEvent } from "./emitter";
+import emitter, { CastEvent } from "./emitter";
 import loadScript from "./loadScript";
 
 let initPromise: Promise<{
@@ -137,8 +137,8 @@ const connect = async () => {
 
 export default {
   CastEvent,
-  on: emitter.on.bind(emitter) as Listener,
-  off: emitter.off.bind(emitter) as Listener,
+  on: emitter.on.bind(emitter),
+  off: emitter.off.bind(emitter),
   init: async (applicationId?: string) => {
     await init(applicationId);
   },
