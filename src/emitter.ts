@@ -16,7 +16,7 @@ export enum CastEvent {
 export interface Listener {
   (
     event: CastEvent.CurrentFile | CastEvent.Finished,
-    callback: (data: string) => void
+    callback: (data: string, metaData?: unknown) => void
   ): void;
   (
     event: CastEvent.Progress | CastEvent.Duration,
@@ -39,7 +39,11 @@ const emitter: {
   off: Listener;
   emit: {
     (event: CastEvent.Progress | CastEvent.Duration, data: number): void;
-    (event: CastEvent.CurrentFile | CastEvent.Finished, data: string): void;
+    (
+      event: CastEvent.CurrentFile | CastEvent.Finished,
+      data: string,
+      metaData?: unknown
+    ): void;
     (
       event:
         | CastEvent.Playing

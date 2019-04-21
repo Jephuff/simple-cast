@@ -63,7 +63,11 @@ const init = async (applicationId?: string) => {
               }
             case "mediaInfo":
               if (hasContentId(value)) {
-                emitter.emit(CastEvent.CurrentFile, value.contentId);
+                emitter.emit(
+                  CastEvent.CurrentFile,
+                  value.contentId,
+                  value.metadata
+                );
                 const castSession =
                   window.cast &&
                   window.cast.framework.CastContext.getInstance().getCurrentSession();
@@ -86,7 +90,11 @@ const init = async (applicationId?: string) => {
                     (window.chrome &&
                       window.chrome.cast.media.IdleReason.FINISHED)
                 ) {
-                  emitter.emit(CastEvent.Finished, media.media.contentId);
+                  emitter.emit(
+                    CastEvent.Finished,
+                    media.media.contentId,
+                    media.media.metadata
+                  );
                   media = null;
                 }
               }
@@ -119,7 +127,9 @@ const isPlaying = async () => {
   return playerState === chrome.cast.media.PlayerState.PLAYING;
 };
 
-const hasContentId = (obj: any): obj is { contentId: string } => {
+const hasContentId = (
+  obj: any
+): obj is { contentId: string; metadata: unknown } => {
   return obj && obj.contentId;
 };
 
@@ -160,6 +170,12 @@ export default {
     const mediaSession = castSession && castSession.getMediaSession();
     return (mediaSession && mediaSession.media.contentId) || "";
   },
+  currentMetaData: async () => {
+    const { cast } = await getInitPromise();
+    const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
+    const mediaSession = castSession && castSession.getMediaSession();
+    return mediaSession && mediaSession.media.metadata;
+  },
   subtitleStatus: async () => {
     const { cast } = await getInitPromise();
     const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
@@ -170,12 +186,18 @@ export default {
   connect: async () => {
     await connect();
   },
-  send: async (file: string, time?: number, subtitleFile?: string) => {
+  send: async (
+    file: string,
+    time?: number,
+    subtitleFile?: string,
+    metaData?: any
+  ) => {
     const { chrome } = await getInitPromise();
     const mediaInfo = new chrome.cast.media.MediaInfo(
       time ? `${file}#t=${time}` : file,
       "video/mp4"
     );
+    mediaInfo.metadata = metaData;
     if (subtitleFile) {
       const subtitle = new chrome.cast.media.Track(
         1,
