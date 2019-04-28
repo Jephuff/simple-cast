@@ -6,6 +6,7 @@ simplified api for quickly sending files to chromecast.
 
 ```js
 import simpleCast from 'simple-cast';
+simpleCast.init()
 simpleCast.send('http://url/of/file');
 ```
 
@@ -109,12 +110,8 @@ simpleCast.on('PLAY', function() {
 });
 ```
 ### PLAYING
-data: `void`  
-emitted when media starts playing
-
-### PAUSED
-data: `void`  
-emitted when media is paused
+data: `boolean`  
+emitted when media starts playing or is paused. Data is `true` when playing, `false` when paused.
 
 ### PROGRESS
 data: `number`  
@@ -133,11 +130,7 @@ data: `string`
 emitted when media changes.
 
 ### SUBTITLES_ON
-data: `void`  
-emitted when subtitles are turned on.
-
-### SUBTITLES_OFF
-data: `void`  
-emitted when subtitles are turned off.
+data: `boolean`  
+emitted when subtitles are turned on or off. Data `true` when subtitles are on, and `false` when off
 
 
