@@ -224,15 +224,21 @@ export default {
     return Boolean(mediaSession && mediaSession.activeTrackIds.length);
   },
   isPlaying,
-
   connect: async () => {
     await connect();
+  },
+  disconnect: async () => {
+    const { cast } = await getInitPromise();
+    const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
+    if (castSession) {
+      await cast.framework.CastContext.getInstance().endCurrentSession(true);
+    }
   },
   send: async (
     file: string,
     time?: number,
     subtitleFile?: string,
-    metaData?: any
+    metaData?: object
   ) => {
     const { chrome } = await getInitPromise();
     const mediaInfo = new chrome.cast.media.MediaInfo(

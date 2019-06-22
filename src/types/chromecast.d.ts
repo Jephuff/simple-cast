@@ -183,7 +183,7 @@ declare namespace ChromeCast {
     //       type: null | TCastContextEventType,
     //       handler: (arg0: TCastStateEventData | TSessionStateEventData) => void
     //     ) => void;
-    //     endCurrentSession: (stopCasting: boolean) => void;
+    endCurrentSession: (stopCasting: boolean) => void;
     getCastState: () => CastState;
     getCurrentSession: () => TCastSession | null;
     //     getSessionState: () => TSessionState;
@@ -487,14 +487,23 @@ declare namespace ChromeCast {
     ) => void;
   }
   interface MediaInfo {
+    // breakClips?: BreakClip[]
+    // breaks?: Break[]
     contentId: string;
     contentType: string;
+    contentUrl?: string
     customData: object;
     duration?: number;
+    entity?: string
+    // hlsSegmentFormat?: HlsSegmentFormat
+    // hlsVideoSegmentFormat?: HlsVideoSegmentFormat
     metadata: any;
+    // startAbsoluteTime?: number
     streamType: StreamType;
     textTrackStyle?: TextTrackStyle;
     tracks: Array<Track>;
+    // userActionStates?: UserActionState[]
+    // vmapAdsRequest?: VastAdsRequest
   }
   //   type TMediaSessionEventData = {
   //     mediaSession: TMedia;
