@@ -43,10 +43,10 @@ const emitter: {
 } = new EventEmitter<CastEvent>();
 
 let initPromise: Promise<{
-  player: ChromeCast.RemotePlayer;
-  playerController: ChromeCast.RemotePlayerController;
-  cast: ChromeCast.Cast;
-  chrome: ChromeCast.Chrome;
+  player: cast.framework.RemotePlayer;
+  playerController: cast.framework.RemotePlayerController;
+  cast: typeof cast;
+  chrome: typeof chrome;
 }> | null = null;
 
 const getInitPromise = async () => {
@@ -100,13 +100,14 @@ export default {
         receiverApplicationId:
           applicationId ||
           window.chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+        autoJoinPolicy: chrome.cast.AutoJoinPolicy.TAB_AND_ORIGIN_SCOPED,
       });
 
       const player = new window.cast.framework.RemotePlayer();
       const playerController = new window.cast.framework.RemotePlayerController(
         player
       );
-      let media: ChromeCast.Media | null;
+      let media: chrome.cast.media.Media | null;
       let subtitlesOn = false;
 
       playerController.addEventListener(
@@ -265,7 +266,7 @@ export default {
       time ? `${file}#t=${time}` : file,
       "video/mp4"
     );
-    mediaInfo.metadata = metaData;
+    if (metaData) mediaInfo.metadata = metaData;
     if (subtitleFile) {
       const subtitle = new chrome.cast.media.Track(
         1,
