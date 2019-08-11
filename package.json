@@ -4,9 +4,9 @@
   "description": "",
   "main": "dist",
   "scripts": {
-    "prepare": "mkdir -p dist && rm -r dist && mkdir -p dist && npm run build",
+    "prepare": "npm run build",
     "watch": "npm run build -- -w",
-    "build": "mkdir -p dist && rm -r dist && mkdir -p dist && tsc --outDir dist -d"
+    "build": "mkdir -p dist && rm -r dist && tsc --outDir dist -d"
   },
   "repository": {
     "type": "git",
