@@ -13,6 +13,7 @@ declare namespace ChromeCast {
     NONE = 1500,
   }
   enum RemotePlayerEventType {
+    QUEUE_DATA_CHANGED = "queueDataChanged",
     ANY_CHANGE = "anyChanged",
     CAN_CONTROL_VOLUME_CHANGED = "canControlVolumeChanged",
     CAN_PAUSE_CHANGED = "canPauseChanged",
@@ -112,29 +113,40 @@ declare namespace ChromeCast {
     CONNECTED = "CONNECTED",
   }
   type RemotePlayer = {
-    //     canControlVolume: boolean;
-    //     canPause: boolean;
-    //     canSeek: boolean;
-    //     controller: null | ControllerInterface;
+    // breakClipId
+    // breakId
+    canControlVolume: boolean;
+    canPause: boolean;
+    canSeek: boolean;
+    // controller: null | ControllerInterface;
+    // currentBreakClipNumber
+    // currentBreakClipTime
+    // currentBreakTime
     currentTime: number;
-    //     displayName: string;
-    //     displayStatus: string;
+    displayName: string;
+    displayStatus: string;
     duration: number;
-    //     imageUrl: null | string;
-    //     isConnected: boolean;
-    //     isMediaLoaded: boolean;
-    //     isMuted: boolean;
-    //     isPaused: boolean;
-    //     mediaInfo: null | MediaInfo;
-    //     playerState: null | TPlayerState;
+    imageUrl: null | string;
+    isConnected: boolean;
+    isMediaLoaded: boolean;
+    isMuted: boolean;
+    isPaused: boolean;
+    // isPlayingBreak
+    // liveSeekableRange
+    mediaInfo: null | MediaInfo;
+    // numberBreakClips
+    playerState: null | PlayerState;
+    queueData?: QueueData;
     //     savedPlayerState: null | {
     //       mediaInfo: null | TPlayerState;
     //       currentTime: number;
     //       isPaused: boolean;
     //     };
-    //     statusText: string;
-    //     title: null | string;
-    //     volumeLevel: number;
+    statusText: string;
+    title: null | string;
+    // videoInfo
+    volumeLevel: number;
+    // whenSkippable
   };
   //   type ControllerInterface = {};
   //   type TActiveInputStateEventData = {
@@ -149,7 +161,7 @@ declare namespace ChromeCast {
   //     autoJoinPolicy: TAutoJoinPolicy;
   //     defaultActionPolicy: TDefaultActionPolicy;
   //     receiverListener: (TReceiverAvailability: undefined) => void;
-  //     sessionListener: (TSession: undefined) => void;
+  //     sessionListener: (Session: undefined) => void;
   //     sessionRequest: TSessionRequest;
   //   };
   //   type TApplicationMetadata = {
@@ -185,7 +197,7 @@ declare namespace ChromeCast {
     //     ) => void;
     endCurrentSession: (stopCasting: boolean) => void;
     getCastState: () => CastState;
-    getCurrentSession: () => TCastSession | null;
+    getCurrentSession: () => CastSession | null;
     //     getSessionState: () => TSessionState;
     //     removeEventListener: (
     //       type: null | TCastContextEventType,
@@ -207,7 +219,7 @@ declare namespace ChromeCast {
   //     VOLUME_CHANGED: 'volumechanged';
   //     MEDIA_SESSION: 'mediasession';
   //   };
-  type TCastSession = {
+  type CastSession = {
     //     addEventListener: (
     //       type: null | TSessionEventType,
     //       handler: (
@@ -230,7 +242,7 @@ declare namespace ChromeCast {
     //     getCastDevice: () => TReceiver;
     getMediaSession: () => Media | null;
     //     getSessionId: () => string;
-    //     getSessionObj: () => TSession;
+    getSessionObj: () => Session;
     //     getSessionState: () => TSessionState;
     //     getVolume: () => number;
     //     isMute: () => boolean;
@@ -279,7 +291,7 @@ declare namespace ChromeCast {
   //   };
   //   type TGameManagerClient = {
   //     getInstanceFor: (
-  //       session: null | TSession,
+  //       session: null | Session,
   //       successCallback: (arg0: TGameManagerInstanceResult) => void,
   //       errorCallback: (arg0: TGameManagerError) => void
   //     ) => void;
@@ -458,43 +470,88 @@ declare namespace ChromeCast {
     description?: string;
     details: object;
   };
+  interface QueueData {
+    // containerMetadata
+    // description
+    // entity
+    // id
+    items?: QueueItem[];
+    // name
+    // queueType
+    // repeatMode
+    // shuffle
+    // startIndex
+    // startTime
+  }
   interface Media {
+    activeTrackIds: Array<number>;
+    // breakStatus?: BreakStatus;
+    currentItemId: null | number;
+    currentTime: number; // deprecated
+    customData: object;
+    idleReason: null | IdleReason;
+    items: null | Array<QueueItem>;
+    // liveSeekableRange?: LiveSeekableRange;
+    loadingItemId: null | number;
+    media: MediaInfo | null;
+    mediaSessionId: number;
+    playbackRate: number;
+    playerState: PlayerState;
+    preloadedItemId: null | number;
+    // queueData?: QueueData;
+    // repeatMode: RepeatMode;
+    sessionId: string;
+    // supportedMediaCommands: Array<MediaCommand>;
+    // videoInfo?: VideoInformation;
+    // volume: Volume;
+
+    addUpdateListener: (listener: (isAlive: boolean) => void) => void;
     editTracksInfo: (
       editTracksInfoRequest: EditTracksInfoRequest,
       successCallback: () => void,
       errorCallback: (error: TError) => void
     ) => void;
-    activeTrackIds: Array<number>;
-    //     currentItemId: null | number;
-    //     currentTime: number;
-    //     customData: object;
-    idleReason: null | IdleReason;
-    //     items: null | Array<QueueItem>;
-    //     loadingItemId: null | number;
-    media: MediaInfo;
-    //     mediaSessionId: number;
-    //     playbackRate: number;
-    playerState: PlayerState;
-    //     preloadedItemId: null | number;
-    //     // repeatMode: TRepeatMode;
-    //     sessionId: string;
-    //     // supportedMediaCommands: Array<TMediaCommand>;
-    //     volume: TVolume;
+    getEstimatedTime: () => number;
+    // getStatus: (
+    //   getStatusRequest: GetStatusRequest,
+    //   successCallback: () => void,
+    //   errorCallback: (error: TError) => void
+    // ) => void;
+    // pause
+    // play
+    queueAppendItem: (
+      item: QueueItem,
+      successCallback: () => void,
+      errorCallback: (error: CastError) => void
+    ) => void;
     queueInsertItems: (
       queueInsertItemsRequest: QueueInsertItemsRequest,
       successCallback: () => void,
       errorCallback: (error: CastError) => void
     ) => void;
+    // queueJumpToItem
+    // queueMoveItemToNewIndex
+    // queueNext
+    // queuePrev
+    // queueRemoveItem
+    // queueReorderItems
+    // queueSetRepeatMode
+    // queueUpdateItems
+    // removeUpdateListener
+    // seek
+    // setVolume
+    // stop
+    // supportsCommand
   }
   interface MediaInfo {
     // breakClips?: BreakClip[]
     // breaks?: Break[]
     contentId: string;
     contentType: string;
-    contentUrl?: string
+    contentUrl?: string;
     customData: object;
     duration?: number;
-    entity?: string
+    entity?: string;
     // hlsSegmentFormat?: HlsSegmentFormat
     // hlsVideoSegmentFormat?: HlsVideoSegmentFormat
     metadata: any;
@@ -562,26 +619,26 @@ declare namespace ChromeCast {
   //     customData: object;
   //   };
   interface QueueInsertItemsRequest {
-    customData: {};
+    customData: null | object;
     insertBefore: null | number;
-    items: Array<QueueItem>;
+    items: Array<QueueItem> & [QueueItem];
   }
   interface QueueItem {
-    activeTrackIds: Array<number>;
+    activeTrackIds: null | Array<number>;
     autoplay: boolean;
-    customData: {};
-    itemId?: null | number;
+    customData: null | object;
+    itemId: null | number;
     media: MediaInfo;
     playbackDuration: null | number;
     preloadTime: number;
     startTime: number;
   }
-  //   type TQueueLoadRequest = {
-  //     customData: object;
-  //     items: Array<QueueItem>;
-  //     // repeatMode: TRepeatMode;
-  //     startIndex: number;
-  //   };
+  interface QueueLoadRequest {
+    customData: object | null;
+    items: Array<QueueItem> & [QueueItem];
+    // repeatMode: TRepeatMode;
+    startIndex: number;
+  }
   //   type TQueueRemoveItemsRequest = {
   //     customData: object;
   //     itemIds: Array<number>;
@@ -641,19 +698,37 @@ declare namespace ChromeCast {
   //     // platform: TSenderPlatform;
   //     url: null | string;
   //   };
-  //   type TSession = {
-  //     appId: string;
-  //     appImages: Array<TImage>;
-  //     displayName: string;
-  //     media: Array<TMedia>;
-  //     namespaces: Array<{ name: string }>;
-  //     receiver: TReceiver;
-  //     senderApps: Array<TSenderApplication>;
-  //     sessionId: string;
-  //     // status: TSessionStatus;
-  //     statusText: null | string;
-  //     transportId: string;
-  //   };
+  interface Session {
+    appId: string;
+    // appImages: Array<TImage>;
+    displayName: string;
+    media: Array<Media>;
+    namespaces: Array<{ name: string }>;
+    // receiver: TReceiver;
+    // senderApps: Array<TSenderApplication>;
+    sessionId: string;
+    // status: TSessionStatus;
+    statusText: null | string;
+    transportId: string;
+
+    // addMediaListener
+    // addMessageListener
+    // addUpdateListener
+    // leave
+    // loadMedia
+    queueLoad: (
+      queueLoadRequest: QueueLoadRequest,
+      successCallback: (media: Media) => void,
+      errorCallback: (error: CastError) => void
+    ) => void;
+    // removeMediaListener
+    // removeMessageListener
+    // removeUpdateListener
+    // sendMessage
+    // setReceiverMuted
+    // setReceiverVolumeLevel
+    // stop
+  }
   //   type TSessionRequest = {
   //     appId: string;
   //     // capabilities: Array<TCapability>;
@@ -662,7 +737,7 @@ declare namespace ChromeCast {
   //   };
   //   type TSessionStateEventData = {
   //     errorCode: null | ErrorCode;
-  //     session: null | TCastSession;
+  //     session: null | CastSession;
   //     sessionState: TSessionState;
   //   };
   //   type TStopRequest = {
@@ -746,7 +821,7 @@ declare namespace ChromeCast {
       //   ): TActiveInputStateEventData;
       // };
       // ApplicationMetadata: {
-      //   new (sessionObj: null | TSession): TApplicationMetadata;
+      //   new (sessionObj: null | Session): TApplicationMetadata;
       // };
       // ApplicationMetadataEventData: {
       //   new (
@@ -765,16 +840,16 @@ declare namespace ChromeCast {
       // };
       // CastSession: {
       //   new (
-      //     sessionObj: null | TSession,
+      //     sessionObj: null | Session,
       //     state: null | TSessionState
-      //   ): TCastSession;
+      //   ): CastSession;
       // };
       // CastStateEventData: {
       //   new (castState: null | TCastState): TCastStateEventData;
       // };
       // SessionStateEventData: {
       //   new (
-      //     session: TCastSession,
+      //     session: CastSession,
       //     sessionState: null | TSessionState,
       //     opt_errorCode: null | Optional
       //   ): TSessionStateEventData;
@@ -839,15 +914,15 @@ declare namespace ChromeCast {
         //         PauseRequest: { new (): TPauseRequest };
         //         PhotoMediaMetadata: { new (): TPhotoMediaMetadata };
         //         PlayRequest: { new (): TPlayRequest };
-        QueueInsertItemsRequest: {
-          new (
-            itemsToInsert: (QueueItem & { itemId: undefined })[]
-          ): QueueInsertItemsRequest;
-        };
-        QueueItem: {
-          new (mediaInfo: MediaInfo): QueueItem & { itemId: undefined };
-        };
-        //         QueueLoadRequest: { new (items: undefined): TQueueLoadRequest };
+        QueueInsertItemsRequest: new (
+          itemsToInsert: QueueItem[] & [QueueItem]
+        ) => QueueInsertItemsRequest;
+
+        QueueItem: new (mediaInfo: MediaInfo) => QueueItem;
+
+        QueueLoadRequest: new (
+          items: QueueItem[] & [QueueItem]
+        ) => QueueLoadRequest;
         //         QueueRemoveItemsRequest: {
         //           new (itemIdsToRemove: undefined): TQueueRemoveItemsRequest;
         //         };
@@ -948,7 +1023,7 @@ declare namespace ChromeCast {
       //           displayName: undefined,
       //           appImages: undefined,
       //           receiver: undefined
-      //         ): TSession;
+      //         ): Session;
       //       };
       //       SessionRequest: {
       //         new (

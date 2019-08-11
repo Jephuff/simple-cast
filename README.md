@@ -33,7 +33,7 @@ simpleCast.currentFile();
 ```
 
 #### send
-`send(file: string, fromTime?: number, subtitleFile?: string): Promise<void>`  
+`send(file: string, fromTime?: number, subtitleFile?: string, queue?: boolean): Promise<void>`  
 
 sends a file from the beginning or specified time. 
 
