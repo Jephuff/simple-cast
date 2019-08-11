@@ -1,4 +1,5 @@
 import EventEmitter from "eventemitter3";
+
 import loadScript from "./loadScript";
 
 enum CastEvent {
@@ -45,8 +46,6 @@ const emitter: {
 let initPromise: Promise<{
   player: cast.framework.RemotePlayer;
   playerController: cast.framework.RemotePlayerController;
-  cast: typeof cast;
-  chrome: typeof chrome;
 }> | null = null;
 
 const getInitPromise = async () => {
@@ -61,29 +60,37 @@ const getInitPromise = async () => {
 };
 
 const isPlaying = async () => {
-  const { chrome, cast } = await getInitPromise();
-  const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
-  const mediaSession = castSession && castSession.getMediaSession();
+  const mediaSession = await getMediaSession();
   const playerState = mediaSession && mediaSession.playerState;
   return playerState === chrome.cast.media.PlayerState.PLAYING;
 };
 
 const hasContentId = (
-  obj: any
+  obj: unknown
 ): obj is { contentId: string; metadata: unknown } => {
-  return obj && obj.contentId;
+  return !!(
+    typeof obj === "object" &&
+    obj &&
+    (obj as { contentId?: string }).contentId
+  );
 };
 
 const connect = async () => {
-  const { cast } = await getInitPromise();
+  await getInitPromise();
 
-  const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
-  if (castSession) {
-    return castSession;
-  } else {
+  let castSession = cast.framework.CastContext.getInstance().getCurrentSession();
+  if (!castSession) {
     await cast.framework.CastContext.getInstance().requestSession();
-    return cast.framework.CastContext.getInstance().getCurrentSession();
+    castSession = cast.framework.CastContext.getInstance().getCurrentSession();
   }
+  if (!castSession) throw new Error("failed to connect");
+  return castSession;
+};
+
+const getMediaSession = async () => {
+  await getInitPromise();
+  const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
+  return castSession && castSession.getMediaSession();
 };
 
 export default {
@@ -93,30 +100,28 @@ export default {
   init: async (applicationId?: string) => {
     const init = async (applicationId?: string) => {
       await loadScript();
-      if (!window.chrome || !window.cast) {
-        throw new Error();
-      }
-      window.cast.framework.CastContext.getInstance().setOptions({
+
+      cast.framework.CastContext.getInstance().setOptions({
         receiverApplicationId:
-          applicationId ||
-          window.chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+          applicationId || chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
         autoJoinPolicy: chrome.cast.AutoJoinPolicy.TAB_AND_ORIGIN_SCOPED,
       });
 
-      const player = new window.cast.framework.RemotePlayer();
-      const playerController = new window.cast.framework.RemotePlayerController(
+      const player = new cast.framework.RemotePlayer();
+      const playerController = new cast.framework.RemotePlayerController(
         player
       );
+
       let media: chrome.cast.media.Media | null;
       let subtitlesOn = false;
 
       playerController.addEventListener(
-        window.cast.framework.RemotePlayerEventType.IS_CONNECTED_CHANGED,
+        cast.framework.RemotePlayerEventType.IS_CONNECTED_CHANGED,
         ({ value }) => emitter.emit(CastEvent.Connected, !!value)
       );
 
       playerController.addEventListener(
-        window.cast.framework.RemotePlayerEventType.CURRENT_TIME_CHANGED,
+        cast.framework.RemotePlayerEventType.CURRENT_TIME_CHANGED,
         ({ value }) => {
           if (typeof value === "number") {
             emitter.emit(CastEvent.Progress, value);
@@ -125,7 +130,7 @@ export default {
       );
 
       playerController.addEventListener(
-        window.cast.framework.RemotePlayerEventType.DURATION_CHANGED,
+        cast.framework.RemotePlayerEventType.DURATION_CHANGED,
         ({ value }) => {
           if (typeof value === "number") {
             emitter.emit(CastEvent.Duration, value);
@@ -134,26 +139,23 @@ export default {
       );
 
       playerController.addEventListener(
-        window.cast.framework.RemotePlayerEventType.PLAYER_STATE_CHANGED,
+        cast.framework.RemotePlayerEventType.PLAYER_STATE_CHANGED,
         ({ value }) => {
-          if (!window.chrome) return;
-          if (value === window.chrome.cast.media.PlayerState.PLAYING) {
+          if (value === chrome.cast.media.PlayerState.PLAYING) {
             emitter.emit(CastEvent.Playing, true);
-          } else if (value === window.chrome.cast.media.PlayerState.PAUSED) {
+          } else if (value === chrome.cast.media.PlayerState.PAUSED) {
             emitter.emit(CastEvent.Playing, false);
           }
         }
       );
 
       playerController.addEventListener(
-        window.cast.framework.RemotePlayerEventType.IS_MEDIA_LOADED_CHANGED,
+        cast.framework.RemotePlayerEventType.IS_MEDIA_LOADED_CHANGED,
         ({ value }) => {
           if (
             !value &&
             media &&
-            media.media &&
-            media.idleReason ===
-              (window.chrome && window.chrome.cast.media.IdleReason.FINISHED)
+            media.idleReason === chrome.cast.media.IdleReason.FINISHED
           ) {
             emitter.emit(CastEvent.Finished, media.media.contentId);
             media = null;
@@ -162,14 +164,12 @@ export default {
       );
 
       playerController.addEventListener(
-        window.cast.framework.RemotePlayerEventType.MEDIA_INFO_CHANGED,
+        cast.framework.RemotePlayerEventType.MEDIA_INFO_CHANGED,
         ({ value }) => {
           if (hasContentId(value)) {
             emitter.emit(CastEvent.CurrentFile, value.contentId);
             emitter.emit(CastEvent.MetaData, value.metadata);
-            const castSession =
-              window.cast &&
-              window.cast.framework.CastContext.getInstance().getCurrentSession();
+            const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
             if (!castSession) return;
             media = castSession.getMediaSession();
             if (media) {
@@ -188,15 +188,10 @@ export default {
         }
       );
 
-      return {
-        player,
-        playerController,
-        cast: window.cast,
-        chrome: window.chrome,
-      };
+      return { player, playerController };
     };
+    if (initPromise) throw new Error("only call simpleCast.init once");
     try {
-      if (initPromise) throw new Error("only call simpleCast.init once");
       initPromise = init(applicationId);
       await initPromise;
       return true;
@@ -210,34 +205,22 @@ export default {
     return player.duration;
   },
   isConnected: async () => {
-    const { cast } = await getInitPromise();
+    await getInitPromise();
     return (
       cast.framework.CastContext.getInstance().getCastState() ===
       cast.framework.CastState.CONNECTED
     );
   },
   currentFile: async () => {
-    const { cast } = await getInitPromise();
-    const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
-    const mediaSession = castSession && castSession.getMediaSession();
-    return (
-      (mediaSession && mediaSession.media && mediaSession.media.contentId) || ""
-    );
+    const mediaSession = await getMediaSession();
+    return (mediaSession && mediaSession.media.contentId) || "";
   },
   currentMetaData: async () => {
-    const { cast } = await getInitPromise();
-    const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
-    const mediaSession = castSession && castSession.getMediaSession();
-    return (
-      mediaSession &&
-      mediaSession.media &&
-      (mediaSession.media.metadata as unknown)
-    );
+    const mediaSession = await getMediaSession();
+    return mediaSession && mediaSession.media.metadata;
   },
   subtitleStatus: async () => {
-    const { cast } = await getInitPromise();
-    const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
-    const mediaSession = castSession && castSession.getMediaSession();
+    const mediaSession = await getMediaSession();
     return Boolean(mediaSession && mediaSession.activeTrackIds.length);
   },
   isPlaying,
@@ -245,11 +228,8 @@ export default {
     await connect();
   },
   disconnect: async () => {
-    const { cast } = await getInitPromise();
-    const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
-    if (castSession) {
-      await cast.framework.CastContext.getInstance().endCurrentSession(true);
-    }
+    await getInitPromise();
+    await cast.framework.CastContext.getInstance().endCurrentSession(true);
   },
   send: async (
     file: string,
@@ -259,9 +239,7 @@ export default {
     queue = false
   ) => {
     const castSession = await connect();
-    if (!castSession) return;
 
-    const { chrome } = await getInitPromise();
     const mediaInfo = new chrome.cast.media.MediaInfo(
       time ? `${file}#t=${time}` : file,
       "video/mp4"
@@ -284,19 +262,13 @@ export default {
     const media = castSession.getMediaSession();
     if (queue && media) {
       const queueItem = new chrome.cast.media.QueueItem(mediaInfo);
-      if (subtitleFile) {
-        queueItem.activeTrackIds = [];
-      }
-      return new Promise((resolve, reject) =>
+      if (subtitleFile) queueItem.activeTrackIds = [];
+      await new Promise((resolve, reject) =>
         media.queueAppendItem(queueItem, resolve, reject)
       );
     } else {
       const loadRequest = new chrome.cast.media.LoadRequest(mediaInfo);
-
-      if (subtitleFile) {
-        loadRequest.activeTrackIds = [];
-      }
-
+      if (subtitleFile) loadRequest.activeTrackIds = [];
       await castSession.loadMedia(loadRequest);
     }
   },
@@ -322,12 +294,10 @@ export default {
     playerController.seek();
   },
   setSubtitleActive: async (active: boolean) => {
-    const { chrome, cast } = await getInitPromise();
+    const mediaSession = await getMediaSession();
     const tracksInfoRequest = new chrome.cast.media.EditTracksInfoRequest(
       active ? [1] : []
     );
-    const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
-    const mediaSession = castSession && castSession.getMediaSession();
     mediaSession &&
       mediaSession.editTracksInfo(tracksInfoRequest, () => {}, () => {});
   },
