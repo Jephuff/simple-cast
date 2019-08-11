@@ -1,73 +1,21 @@
-import EventEmitter from "eventemitter3";
-
 import loadScript from "./loadScript";
-
-enum CastEvent {
-  Progress = "PROGRESS",
-  Duration = "DURATION",
-  Finished = "FINISHED",
-  CurrentFile = "CURRENT_FILE",
-  Playing = "PLAYING",
-  SubtitlesOn = "SUBTITLES_ON",
-  Connected = "CONNECTED",
-  MetaData = "METADATA",
-}
-
-interface Listener {
-  (
-    event: CastEvent.CurrentFile | CastEvent.Finished,
-    callback: (data: string) => void
-  ): void;
-  (event: CastEvent.MetaData, callback: (data?: unknown) => void): void;
-  (
-    event: CastEvent.Progress | CastEvent.Duration,
-    callback: (data: number) => void
-  ): void;
-  (
-    event: CastEvent.Playing | CastEvent.Connected | CastEvent.SubtitlesOn,
-    callback: (data: boolean) => void
-  ): void;
-}
-
-const emitter: {
-  on: Listener;
-  off: Listener;
-  emit: {
-    (event: CastEvent.Progress | CastEvent.Duration, data: number): void;
-    (
-      event: CastEvent.Playing | CastEvent.SubtitlesOn | CastEvent.Connected,
-      data: boolean
-    ): void;
-    (event: CastEvent.CurrentFile | CastEvent.Finished, data: string): void;
-    (event: CastEvent.MetaData, data?: unknown): void;
-  };
-} = new EventEmitter<CastEvent>();
+import { emitter, CastEvent } from "./emitter";
 
 let initPromise: Promise<{
   player: cast.framework.RemotePlayer;
   playerController: cast.framework.RemotePlayerController;
-}> | null = null;
+}> | void;
 
 const getInitPromise = async () => {
   if (!initPromise) {
     throw new Error("must call `simpleCast.init()` before using any methods");
   }
-  try {
-    return await initPromise;
-  } catch (err) {
-    throw new Error("simpleCast.init() failed, chromecast unavailable");
-  }
-};
-
-const isPlaying = async () => {
-  const mediaSession = await getMediaSession();
-  const playerState = mediaSession && mediaSession.playerState;
-  return playerState === chrome.cast.media.PlayerState.PLAYING;
+  return initPromise;
 };
 
 const hasContentId = (
   obj: unknown
-): obj is { contentId: string; metadata: unknown } => {
+): obj is { contentId: string; metadata: Object | undefined } => {
   return !!(
     typeof obj === "object" &&
     obj &&
@@ -75,9 +23,14 @@ const hasContentId = (
   );
 };
 
+const getMediaSession = async () => {
+  await getInitPromise();
+  const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
+  return castSession && castSession.getMediaSession();
+};
+
 const connect = async () => {
   await getInitPromise();
-
   let castSession = cast.framework.CastContext.getInstance().getCurrentSession();
   if (!castSession) {
     await cast.framework.CastContext.getInstance().requestSession();
@@ -87,16 +40,16 @@ const connect = async () => {
   return castSession;
 };
 
-const getMediaSession = async () => {
-  await getInitPromise();
-  const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
-  return castSession && castSession.getMediaSession();
+const isPlaying = async () => {
+  const mediaSession = await getMediaSession();
+  const playerState = mediaSession && mediaSession.playerState;
+  return playerState === chrome.cast.media.PlayerState.PLAYING;
 };
 
+export { CastEvent, ValueForEvent } from "./emitter";
 export default {
-  CastEvent,
-  on: emitter.on.bind(emitter) as Listener,
-  off: emitter.off.bind(emitter) as Listener,
+  on: emitter.on.bind(emitter),
+  off: emitter.off.bind(emitter),
   init: async (applicationId?: string) => {
     const init = async (applicationId?: string) => {
       await loadScript();
@@ -112,7 +65,7 @@ export default {
         player
       );
 
-      let media: chrome.cast.media.Media | null;
+      let media: chrome.cast.media.Media | null | void;
       let subtitlesOn = false;
 
       playerController.addEventListener(
@@ -183,7 +136,7 @@ export default {
             }
           } else if (typeof value !== "string") {
             emitter.emit(CastEvent.CurrentFile, "");
-            emitter.emit(CastEvent.MetaData);
+            emitter.emit(CastEvent.MetaData, undefined);
           }
         }
       );
@@ -217,16 +170,14 @@ export default {
   },
   currentMetaData: async () => {
     const mediaSession = await getMediaSession();
-    return mediaSession && mediaSession.media.metadata;
+    if (mediaSession) return mediaSession.media.metadata;
   },
   subtitleStatus: async () => {
     const mediaSession = await getMediaSession();
     return Boolean(mediaSession && mediaSession.activeTrackIds.length);
   },
   isPlaying,
-  connect: async () => {
-    await connect();
-  },
+  connect,
   disconnect: async () => {
     await getInitPromise();
     await cast.framework.CastContext.getInstance().endCurrentSession(true);
