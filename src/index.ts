@@ -46,6 +46,12 @@ const isPlaying = async () => {
   return playerState === chrome.cast.media.PlayerState.PLAYING;
 };
 
+const seek = async (time: number) => {
+  const { playerController, player } = await getInitPromise();
+  player.currentTime = Math.floor(time);
+  playerController.seek();
+};
+
 export { CastEvent, ValueForEvent } from "./emitter";
 export default {
   on: emitter.on.bind(emitter),
@@ -57,7 +63,7 @@ export default {
       cast.framework.CastContext.getInstance().setOptions({
         receiverApplicationId:
           applicationId || chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
-        autoJoinPolicy: chrome.cast.AutoJoinPolicy.TAB_AND_ORIGIN_SCOPED,
+        autoJoinPolicy: chrome.cast.AutoJoinPolicy.TAB_AND_ORIGIN_SCOPED
       });
 
       const player = new cast.framework.RemotePlayer();
@@ -192,9 +198,11 @@ export default {
     const castSession = await connect();
 
     const mediaInfo = new chrome.cast.media.MediaInfo(
-      time ? `${file}#t=${time}` : file,
+      // time ? `${file}#t=${time}` : file, // TODO: not working, going to have to seek to position for now.
+      file,
       "video/mp4"
     );
+
     if (metaData) mediaInfo.metadata = metaData;
     if (subtitleFile) {
       const subtitle = new chrome.cast.media.Track(
@@ -221,6 +229,10 @@ export default {
       const loadRequest = new chrome.cast.media.LoadRequest(mediaInfo);
       if (subtitleFile) loadRequest.activeTrackIds = [];
       await castSession.loadMedia(loadRequest);
+      // TODO: setting type with `t=` in url not working so this has to seek after load.
+      if (time) {
+        await seek(time);
+      }
     }
   },
   play: async () => {
@@ -239,11 +251,7 @@ export default {
     const { playerController } = await getInitPromise();
     playerController.stop();
   },
-  seek: async (time: number) => {
-    const { playerController, player } = await getInitPromise();
-    player.currentTime = Math.floor(time);
-    playerController.seek();
-  },
+  seek,
   setSubtitleActive: async (active: boolean) => {
     const mediaSession = await getMediaSession();
     const tracksInfoRequest = new chrome.cast.media.EditTracksInfoRequest(
@@ -251,5 +259,5 @@ export default {
     );
     mediaSession &&
       mediaSession.editTracksInfo(tracksInfoRequest, () => {}, () => {});
-  },
+  }
 };
