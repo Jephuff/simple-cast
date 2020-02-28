@@ -63,7 +63,7 @@ export default {
       cast.framework.CastContext.getInstance().setOptions({
         receiverApplicationId:
           applicationId || chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
-        autoJoinPolicy: chrome.cast.AutoJoinPolicy.TAB_AND_ORIGIN_SCOPED
+        autoJoinPolicy: chrome.cast.AutoJoinPolicy.TAB_AND_ORIGIN_SCOPED,
       });
 
       const player = new cast.framework.RemotePlayer();
@@ -258,6 +258,10 @@ export default {
       active ? [1] : []
     );
     mediaSession &&
-      mediaSession.editTracksInfo(tracksInfoRequest, () => {}, () => {});
-  }
+      mediaSession.editTracksInfo(
+        tracksInfoRequest,
+        () => {},
+        () => {}
+      );
+  },
 };

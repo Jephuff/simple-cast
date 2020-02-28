@@ -1,9 +1,3 @@
-declare global {
-  interface Window {
-    __onGCastApiAvailable?: (isAvailable: boolean) => void;
-  }
-}
-
 const castSenderScriptSrc =
   "https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1";
 

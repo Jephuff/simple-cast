@@ -23,12 +23,13 @@
   "author": "Jeffrey Burt",
   "license": "ISC",
   "dependencies": {
-    "eventemitter3": "4.x"
+    "eventemitter3": "4.x",
+    "@types/chrome": "0.0.x",
+    "@types/chromecast-caf-sender": "1.x"
   },
   "devDependencies": {
-    "@types/chrome": "0.0.x",
-    "@types/chromecast-caf-sender": "1.x",
-    "@typescript-eslint/eslint-plugin": "1.x",
+    "@typescript-eslint/eslint-plugin": "2.x",
+    "@typescript-eslint/parser": "2.x",
     "eslint": "6.x",
     "eslint-config-prettier": "6.x",
     "eslint-plugin-prettier": "3.x",
