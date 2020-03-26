@@ -132,7 +132,7 @@ export default {
             if (!castSession) return;
             media = castSession.getMediaSession();
             if (media) {
-              if (media.activeTrackIds.length && !subtitlesOn) {
+              if (media.activeTrackIds?.length && !subtitlesOn) {
                 subtitlesOn = true;
                 emitter.emit(CastEvent.SubtitlesOn, subtitlesOn);
               } else if (subtitlesOn) {
