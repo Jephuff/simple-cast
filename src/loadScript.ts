@@ -3,7 +3,7 @@ const castSenderScriptSrc =
 
 export default () => {
   return new Promise((resolve, reject) => {
-    window.__onGCastApiAvailable = isAvailable => {
+    window.__onGCastApiAvailable = (isAvailable) => {
       if (isAvailable) {
         resolve();
       } else {
